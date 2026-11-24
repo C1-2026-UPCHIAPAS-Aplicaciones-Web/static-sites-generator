@@ -145,5 +145,68 @@ class TestStaticPagesGeneratorApi(unittest.TestCase):
         self.assertEqual(content_res.status_code, 200)
         self.assertIn("Página Resiliente a Pérdidas", content_res.text)
 
+    def test_05_quarto_renders_styled_html(self):
+        page_id = "test-quarto-styled"
+        payload = {
+            "page_id": page_id,
+            "document_id": "doc-quarto-styled-1",
+            "slug": "quarto-estilizado-test",
+            "content_type": "DEV_DOC",
+            "engine_hint": "quarto",
+            "metadata_values": {
+                "title": "Guía Quarto Estilizada",
+                "author": "Equipo CMS",
+                "theme": "cosmo",
+                "toc": True
+            },
+            "frozen_template": {
+                "theme": {
+                    "primary_color": "#4338ca",
+                    "background_color": "#f8fafc"
+                },
+                "layout_structure": {"regions": ["header", "toc", "main_canvas", "footer"]}
+            },
+            "canvas_blocks": [
+                {
+                    "block_type": "HEADING",
+                    "order_index": 1,
+                    "content_payload": {"level": 1, "text": "Título Principal"},
+                    "style_config": {"color": "#312e81", "text_align": "center"}
+                },
+                {
+                    "block_type": "PARAGRAPH",
+                    "order_index": 2,
+                    "content_payload": {"text": "Párrafo con fondo personalizado."},
+                    "style_config": {"background_color": "#eef2ff", "padding": "16px"}
+                },
+                {
+                    "block_type": "CODE",
+                    "order_index": 3,
+                    "content_payload": {"language": "python", "code": "print('hola quarto')"},
+                    "style_config": {"theme": "dark", "border_radius": "8px"}
+                },
+                {
+                    "block_type": "QUOTE",
+                    "order_index": 4,
+                    "content_payload": {"text": "Cita destacada", "author": "Autor"},
+                    "style_config": {"border_left": "4px solid #4338ca"}
+                }
+            ]
+        }
+
+        res = self.client.post("/api/v1/pages", json=payload)
+        self.assertEqual(res.status_code, 201)
+        content_res = self.client.get(f"/api/v1/pages/{page_id}/content")
+        self.assertEqual(content_res.status_code, 200)
+        html_text = content_res.text
+
+        self.assertIn("<h1", html_text)
+        self.assertIn("Título Principal", html_text)
+        self.assertIn("color: #312e81", html_text)
+        self.assertIn("background-color: #eef2ff", html_text)
+        self.assertIn("language-python", html_text)
+        self.assertIn("<blockquote", html_text)
+        self.assertIn("toc-card", html_text)
+
 if __name__ == "__main__":
     unittest.main()
